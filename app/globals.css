@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/* Design tokens from DESIGN.md, section 2.1 (Style Guide) */
+@theme {
+  /* Backgrounds */
+  --color-midnight: #070a2e;
+  --color-navy: #0e1450;
+  --color-indigo: #1c2380;
+  --color-royal-purple: #3a2a8f;
+  --color-spotlight: #3d7bff;
+
+  /* Accents & text */
+  --color-gold-light: #f8dc7a;
+  --color-gold: #e5b12e;
+  --color-gold-deep: #9c6b12;
+  --color-white: #ffffff;
+  --color-silver: #dce1ec;
+  --color-silver-400: #9aa3bc;
+  --color-coral: #f07167;
+
+  /* Fonts (CSS variables are set by next/font in app/layout.tsx) */
+  --font-sans: var(--font-heebo), system-ui, sans-serif;
+  --font-display: var(--font-frank), serif;
+}
