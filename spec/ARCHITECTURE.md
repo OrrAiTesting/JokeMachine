@@ -18,8 +18,8 @@
 | PWA – Manifest | `app/manifest.ts` (יכולת מובנית ב-Next.js) | שם, אייקונים ותצוגת standalone |
 | PWA – Service Worker | קובץ `public/sw.js` שנכתב ידנית, ללא ספרייה | טעינת מעטפת האפליקציה ללא חיבור (FR5.3) |
 | Backend Runtime | Vercel Functions (Node.js LTS, Fluid compute) | הרצת ה-Route Handler שפונה למודל ה-AI |
-| שירות AI | Anthropic Claude API, מודל `claude-sonnet-5-5` | יצירת הבדיחות |
-| AI SDK | `@anthropic-ai/sdk` (ה-SDK הרשמי ל-TypeScript) | פנייה ל-Claude API מה-Backend |
+| שירות AI | OpenAI API, מודל `gpt-6.1-sol` | יצירת הבדיחות |
+| AI SDK | `openai` (ה-SDK הרשמי ל-TypeScript) | פנייה ל-OpenAI API (Responses API) מה-Backend |
 | ניהול קוד | Git, Repository ב-GitHub | ניהול גרסאות ומקור לפריסה האוטומטית |
 | Hosting ו-CI/CD | Vercel (Git Integration) | Build ופריסה אוטומטיים מ-GitHub, HTTPS ו-CDN |
 | Database | **אין** | ה-PRD אוסר מסד נתונים, ולכן אין Supabase |
@@ -34,7 +34,7 @@
   שתי החלופות אפשריות, אבל Next.js הוא הנפוץ ביותר, הכי מתועד, ונוח במיוחד לפיתוח בעזרת AI.
 - **Vercel Functions מתאים למודל ההרצה.** קריאה ליצירת בדיחה נמשכת שניות בודדות, והיא בטווח מגבלת זמן הריצה (300 שניות גם בתוכנית Hobby). זמן ההמתנה למודל ה-AI לא נספר כזמן CPU פעיל, ולכן העלות נמוכה. גודל הבקשה והתשובה (טקסט קצר) רחוק ממגבלת ה-4.5MB.
 - **Service Worker ידני במקום ספרייה.** הדרישה היא רק שמעטפת האפליקציה תיטען בלי חיבור (FR5.3). קובץ Service Worker של כמה עשרות שורות מכסה את זה, בלי תלות ב-Serwist ובלי שינויי Build. התיעוד הרשמי של Next.js מציג Serwist רק כאופציה לתמיכת Offline מלאה, שלא נדרשת כאן.
-- **Claude API עם `claude-sonnet-5-5`.** מודל ביניים: כותב היטב בעברית ובאנגלית, ויודע לזהות את שפת הקלט ולענות בה (FR3.4). הוא זול ומהיר יותר מ-Opus, ומתאים למשימה קצרה כמו בדיחה (ראו ADR-1). הפנייה מתבצעת עם ה-SDK הרשמי ל-TypeScript. שם המודל נקבע במשתנה סביבה, כדי שאפשר יהיה להחליף אותו בלי לשנות קוד (ראו סעיף 1.3).
+- **OpenAI API עם `gpt-6.1-sol`.** מודל ביניים: כותב היטב בעברית ובאנגלית, ויודע לזהות את שפת הקלט ולענות בה (FR3.4). הוא זול יותר מ-`gpt-6-astra`, ומתאים למשימה קצרה כמו בדיחה (ראו ADR-1 ו-ADR-8). הפנייה מתבצעת עם ה-SDK הרשמי ל-TypeScript. שם המודל נקבע במשתנה סביבה, כדי שאפשר יהיה להחליף אותו בלי לשנות קוד (ראו סעיף 1.3).
 - **Tailwind CSS.** נפוץ מאוד ותומך ב-Logical Properties (`ms-`/`me-`, `start`/`end`) שמתאימים ל-RTL. רוב כלי ה-AI מכירים אותו היטב.
 - **אין Database, Authentication או אחסון קבצים.** בהתאם לאילוצי ה-PRD. לכן אין צורך ב-Supabase, בסביבות Database או ב-Migrations.
 
@@ -42,11 +42,11 @@
 
 | נושא | פירוט | התמודדות |
 |---|---|---|
-| **עלות ה-AI** | ה-PRD קובע שאין Rate Limiting. מי שיודע את כתובת ה-API יכול לשלוח בקשות רבות ולייצר חיוב. אורך הנושא מוגבל ל-200 תווים (FR1.2), ולכן כל בקשה בודדת קצרה וזולה. כשמגיעים ל-Spend Limit, האתר מפסיק לייצר בדיחות לכל המשתמשים עד סוף החודש. | הגדרת **Spend Limit** חודשי בחשבון Anthropic (Console), שמגביל את הנזק הכספי. מעבר למודל זול יותר (למשל `claude-haiku-5-5`) או יקר יותר (`claude-opus-5-5`) הוא החלטה עסקית, ואפשר לבצע אותה בעדכון משתנה הסביבה `ANTHROPIC_MODEL` בלבד. |
+| **עלות ה-AI** | ה-PRD קובע שאין Rate Limiting. מי שיודע את כתובת ה-API יכול לשלוח בקשות רבות ולייצר חיוב. אורך הנושא מוגבל ל-200 תווים (FR1.2), ולכן כל בקשה בודדת קצרה וזולה. כשמגיעים ל-Spend Limit, האתר מפסיק לייצר בדיחות לכל המשתמשים עד סוף החודש. | הגדרת **Spend Limit** (Budget) חודשי בחשבון OpenAI (Platform), שמגביל את הנזק הכספי. מעבר למודל זול יותר (למשל `gpt-6-luna`) או יקר יותר (`gpt-6-astra`) הוא החלטה עסקית, ואפשר לבצע אותה בעדכון משתנה הסביבה `OPENAI_MODEL` בלבד. |
 | **תוכנית Vercel Hobby** | Hobby מיועדת לשימוש אישי ולא מסחרי בלבד. חריגה ממגבלות השימוש עלולה לגרום להשהיית החשבון. | אם המוצר מסחרי (פרסומות, קידום שירות, תשלום על הפיתוח), נדרשת תוכנית Pro. |
 | **iOS ו-PWA** | ב-Safari על iOS אין כפתור התקנה אוטומטי. ההתקנה נעשית דרך "שיתוף" ואז "הוספה למסך הבית". | המנגנון המובנה של הדפדפן מספיק לדרישת ה-PRD (Flow 4). לא מוסיפים כפתור התקנה ייעודי. |
-| **סירוב של המודל** | Claude עשוי לסרב לבקשות מסוימות (`stop_reason: "refusal"`). במקרה כזה התשובה עשויה להגיע בלי טקסט. | טקסט סירוב שהמודל מחזיר מוצג כמו שהוא (FR4.3). תשובה ללא טקסט מטופלת כ"תשובה ריקה", ומוצגת הודעת השגיאה הכללית. |
-| **תלות בשירות חיצוני** | כשה-Claude API לא זמין, אי אפשר ליצור בדיחות. | הודעת השגיאה הכללית וניסיון חוזר על ידי המשתמש, בהתאם ל-PRD. |
+| **סירוב של המודל** | המודל עשוי לסרב לבקשות מסוימות. במקרה כזה התשובה עשויה להגיע בלי טקסט רגיל (`output_text` ריק). | טקסט סירוב שהמודל מחזיר מוצג כמו שהוא (FR4.3). תשובה ללא טקסט מטופלת כ"תשובה ריקה", ומוצגת הודעת השגיאה הכללית. |
+| **תלות בשירות חיצוני** | כשה-OpenAI API לא זמין, אי אפשר ליצור בדיחות. | הודעת השגיאה הכללית וניסיון חוזר על ידי המשתמש, בהתאם ל-PRD. |
 
 ---
 
@@ -70,12 +70,12 @@
 │   Vercel Function: Route Handler  app/api/joke/route.ts                │
 │   ─ ולידציה ונרמול של הקלט                                              │
 │   ─ בניית ההנחיה למודל                                                  │
-│   ─ קריאה ל-Claude API עם ANTHROPIC_API_KEY (משתנה סביבה בשרת בלבד)    │
+│   ─ קריאה ל-OpenAI API עם OPENAI_API_KEY (משתנה סביבה בשרת בלבד)       │
 │   ─ מיפוי התשובה או השגיאה לפורמט אחיד                                  │
 └──────────────┬─────────────────────────────────────────────────────────┘
-               │ HTTPS (Anthropic SDK)
+               │ HTTPS (OpenAI SDK)
                ▼
-        Anthropic Claude API
+        OpenAI API (Responses)
 ```
 
 ### 2.2 רכיבים ואחריות
@@ -86,8 +86,8 @@
 | **Layout ו-Metadata (Server)** | `<html lang="he" dir="rtl">`, טעינת הגופן, כותרת, `theme-color`, קישור ל-manifest | לוגיקה עסקית |
 | **Manifest** | שם "מכונת הבדיחות", אייקונים, `display: standalone`, `start_url: "/"`, `lang: "he"`, `dir: "rtl"` | – |
 | **Service Worker** | שמירה ב-Cache ושליפה של מעטפת האפליקציה, כדי שהיא תיפתח גם בלי חיבור | יצירת בדיחות Offline, Cache לבקשות API |
-| **Route Handler `/api/joke`** | ולידציה, בניית ההנחיה, קריאה ל-Claude, טיפול בשגיאות ו-Timeout, החזרת JSON אחיד | שמירת נתונים מכל סוג |
-| **מודול AI (Server-only)** | אתחול לקוח Anthropic, הגדרת המודל והפרמטרים, הגדרת ה-System Prompt | ממשק משתמש |
+| **Route Handler `/api/joke`** | ולידציה, בניית ההנחיה, קריאה למודל, טיפול בשגיאות ו-Timeout, החזרת JSON אחיד | שמירת נתונים מכל סוג |
+| **מודול AI (Server-only)** | אתחול לקוח OpenAI, הגדרת המודל והפרמטרים, הגדרת ה-System Prompt | ממשק משתמש |
 
 ### 2.3 Modules ושכבות לוגיות
 
@@ -98,7 +98,7 @@ app/
   manifest.ts           ← PWA Manifest
   api/joke/route.ts     ← שכבת API: קלט ← לוגיקה ← תשובה
 lib/
-  joke-service.ts       ← שכבת לוגיקה (server-only): בניית ההנחיה וקריאה ל-Claude
+  joke-service.ts       ← שכבת לוגיקה (server-only): בניית ההנחיה וקריאה למודל
   messages.ts           ← טקסטי הממשק בעברית ומיפוי קודי שגיאה להודעות
 public/
   sw.js                 ← Service Worker
@@ -150,15 +150,16 @@ public/
 - Runtime: Node.js (ברירת המחדל), עם `export const maxDuration = 60`.
 - `export const dynamic = "force-dynamic"`, כדי ש-Next.js ו-Vercel לא ישמרו תשובות ב-Cache. כל בקשה מייצרת בדיחה חדשה (FR2.3).
 
-**מודול `joke-service`: הקריאה ל-Claude**
+**מודול `joke-service`: הקריאה למודל (`client.responses.create`)**
 
 | פרמטר | ערך | הסבר |
 |---|---|---|
-| `model` | `process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5"` | מאפשר להחליף מודל בלי לשנות קוד |
-| `max_tokens` | 2000 | מספיק לבדיחה וגם לחשיבה הפנימית של המודל |
-| `output_config.effort` | `"low"` | משימה קצרה ויצירתית. רמה נמוכה מקצרת את זמן התגובה ומוזילה את העלות. **לאמת בזמן הבנייה** מול התיעוד העדכני של Anthropic שהמודל שנבחר תומך בפרמטר; אם לא, משמיטים אותו |
+| `model` | `process.env.OPENAI_MODEL \|\| "gpt-6.1-sol"` | מאפשר להחליף מודל בלי לשנות קוד |
+| `max_output_tokens` | 2000 | מספיק לבדיחה וגם לחשיבה הפנימית של המודל |
+| `reasoning.effort` | `"low"` | משימה קצרה ויצירתית. רמה נמוכה מקצרת את זמן התגובה ומוזילה את העלות. `gpt-6.1-sol` תומך ב-`low` עד `max` (לא ב-`none`) |
 | `thinking` | לא נשלח | משאירים את ברירת המחדל של המודל |
-| `fallbacks` | `"default"`, עם beta `server-side-fallback-2026-07-01` | כשמסווג בטיחות דוחה בקשה לגיטימית בטעות, השרת של Anthropic מנתב אותה למודל חלופי. **לאמת בזמן הבנייה** את שם הפרמטר ואת ה-beta מול התיעוד העדכני; אם הם לא נתמכים, משמיטים אותם |
+| `instructions` | ה-System Prompt (למטה) | ההוראות הקבועות למודל |
+| `store` | `false` | OpenAI לא שומרת את התשובה לשימוש חוזר בממשק שלה. מתאים לדרישת "אין שמירת נתונים" |
 | Client options | `timeout: 12_000` ms, `maxRetries: 1` | גם במקרה הגרוע (שני ניסיונות של 12 שניות) הבקשה מסתיימת לפני ה-Timeout של הלקוח (30 שניות) |
 
 **ההנחיה למודל:**
@@ -175,10 +176,10 @@ public/
 - אין שכבת סינון נוספת על הקלט או על הפלט (FR3.7).
 
 **עיבוד התשובה:**
-1. מחברים את כל בלוקי ה-`text` בתשובה, ומסירים רווחים בתחילת הטקסט ובסופו.
+1. לוקחים את `response.output_text` (כל הטקסט שהמודל כתב), ומסירים רווחים בתחילתו ובסופו.
 2. אם התוצאה לא ריקה, מחזירים `200 { joke }`. זה כולל טקסט סירוב שהמודל כתב (FR4.3).
-3. אם התוצאה ריקה (למשל ב-`refusal` בלי טקסט), מחזירים `502 { error: "empty_response" }`.
-4. שגיאות של ה-SDK (`APIError`, `APIConnectionError`, Timeout) נרשמות ב-Log של השרת עם הסוג והסטטוס בלבד, ומחזירים `502 { error: "ai_error" }`. פרטי שגיאה פנימיים לא מוחזרים ללקוח.
+3. אם התוצאה ריקה (למשל בסירוב בלי טקסט רגיל), מחזירים `502 { error: "empty_response" }`.
+4. שגיאות של ה-SDK (`APIError`, `APIConnectionError`, `APIConnectionTimeoutError`) נרשמות ב-Log של השרת עם הסוג והסטטוס בלבד, ומחזירים `502 { error: "ai_error" }`. פרטי שגיאה פנימיים לא מוחזרים ללקוח.
 
 ### 2.6 APIs
 
@@ -198,13 +199,13 @@ Responses:
 |---|---|---|
 | `200` | `{ "joke": "..." }` | התקבל טקסט מהמודל |
 | `400` | `{ "error": "invalid_request" }` | הגוף אינו JSON תקין, `topic` אינו מחרוזת, או שהוא ארוך מ-200 תווים |
-| `502` | `{ "error": "ai_error" }` | שגיאה, Timeout או חוסר זמינות של Claude API |
+| `502` | `{ "error": "ai_error" }` | שגיאה, Timeout או חוסר זמינות של OpenAI API |
 | `502` | `{ "error": "empty_response" }` | המודל החזיר תשובה ללא טקסט |
 | `500` | `{ "error": "server_error" }` | שגיאה לא צפויה, או ש-API Key לא מוגדר |
 
 **מיפוי בצד הלקוח:** כל תשובה שאינה `200` מוצגת עם `error.general`. כשל רשת או `navigator.onLine === false` מוצגים עם `error.offline`.
 
-**אינטגרציה חיצונית:** Anthropic Messages API (`POST /v1/messages`) דרך `@anthropic-ai/sdk`. זו האינטגרציה החיצונית היחידה.
+**אינטגרציה חיצונית:** OpenAI Responses API (`POST /v1/responses`) דרך `openai`. זו האינטגרציה החיצונית היחידה.
 
 ### 2.7 Data Model
 
@@ -225,8 +226,8 @@ Responses:
 2. הלקוח בודק `navigator.onLine`. אם אין חיבור, הוא עובר ל-`error(offline)` והתהליך נעצר.
 3. `fetch("POST /api/joke", { topic })` נשלח עם `AbortController` של 30 שניות. ה-Service Worker לא מתערב בבקשה.
 4. ה-Route Handler מבצע ולידציה ו-`trim()`, ואז קורא ל-`joke-service`.
-5. `joke-service` שולח ל-Claude את ה-System Prompt ואת הנושא (או את הבקשה לבדיחה כללית), עם המפתח מ-`process.env.ANTHROPIC_API_KEY`.
-6. Claude מחזיר את הבדיחה. השרת מחלץ את הטקסט ומחזיר `200 { joke }`.
+5. `joke-service` שולח ל-OpenAI את ה-System Prompt ואת הנושא (או את הבקשה לבדיחה כללית), עם המפתח מ-`process.env.OPENAI_API_KEY`.
+6. המודל מחזיר את הבדיחה. השרת מחלץ את הטקסט ומחזיר `200 { joke }`.
 7. הלקוח עובר ל-`success` ומציג את הבדיחה עם `dir="auto"`. הכפתור חוזר להיות פעיל.
 8. בכל כשל, בשלבים 3 עד 6, הלקוח עובר ל-`error` עם ההודעה המתאימה, והכפתור חוזר להיות פעיל (Flow 3).
 
@@ -255,7 +256,7 @@ Responses:
 **Authentication ו-Authorization:** אין. ה-Endpoint ציבורי, בהתאם ל-PRD.
 
 **אבטחת ה-API Key:**
-- `ANTHROPIC_API_KEY` נשמר כמשתנה סביבה ב-Vercel ומסומן כ-**Sensitive**. בפיתוח מקומי הוא נשמר בקובץ `.env`, שהמשתמש ממלא בעצמו (ראו ADR-4).
+- `OPENAI_API_KEY` נשמר כמשתנה סביבה ב-Vercel ומסומן כ-**Sensitive**. בפיתוח מקומי הוא נשמר בקובץ `.env`, שהמשתמש ממלא בעצמו (ראו ADR-4).
 - שם המשתנה **לא** מתחיל ב-`NEXT_PUBLIC_`, ולכן Next.js לא מכניס אותו לקוד שנשלח לדפדפן.
 - `import "server-only"` במודול שמשתמש במפתח.
 - `.env` ו-`.env.*` נמצאים ב-`.gitignore` (חוץ מ-`.env.example`), כך שהמפתח לא נכנס ל-Repository. ב-Repository נשמר רק `.env.example` עם שמות המשתנים, בלי ערכים.
@@ -266,11 +267,11 @@ Responses:
 - Security Headers דרך `next.config.ts`: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`.
 - הבדיחה מוצגת כטקסט רגיל, ולא נעשה שימוש ב-`dangerouslySetInnerHTML`.
 - **Prompt Injection:** הנושא נשלח בתוך התגית `<topic>`, וה-System Prompt מגדיר אותו כנתון ולא כהוראה. ההשפעה מוגבלת בכל מקרה: אין למודל כלים, אין נתונים רגישים בהקשר, והפלט מוצג רק למשתמש ששלח את הבקשה.
-- **שימוש לרעה ועלויות:** אין Rate Limiting, בהתאם ל-PRD. ההגנות הן הגבלת אורך הנושא ל-200 תווים ו-Spend Limit בחשבון Anthropic (ראו סעיף 1.3).
+- **שימוש לרעה ועלויות:** אין Rate Limiting, בהתאם ל-PRD. ההגנות הן הגבלת אורך הנושא ל-200 תווים ו-Spend Limit בחשבון OpenAI (ראו סעיף 1.3).
 
 **פרטיות:**
 - אין Cookies, אין Analytics ואין זיהוי משתמשים.
-- הנושא נשלח ל-Anthropic לצורך יצירת הבדיחה בלבד (כפי שמצוין ב-PRD).
+- הנושא נשלח ל-OpenAI לצורך יצירת הבדיחה בלבד (כפי שמצוין ב-PRD).
 - השרת לא רושם את תוכן הנושא או את הבדיחה ב-Logs. נרשמים רק סוג השגיאה והסטטוס.
 
 ### 2.11 תשתיות, Hosting, פריסה ותצורה
@@ -290,16 +291,16 @@ Responses:
 
 - Vercel מזהה את Next.js אוטומטית, ולכן לא נדרש קובץ `vercel.json`.
 - ה-Build מורץ ב-Vercel (`next build`) ולא במחשב המשתמש. אין תהליך פריסה ידני.
-- Region של ה-Functions: ברירת המחדל (`iad1`). השרתים של Anthropic נמצאים בארה"ב, ולכן Region אמריקאי מקצר את זמן הקריאה למודל.
+- Region של ה-Functions: ברירת המחדל (`iad1`). השרתים של OpenAI נמצאים בארה"ב, ולכן Region אמריקאי מקצר את זמן הקריאה למודל.
 
 **סביבות ומשתני סביבה:**
 
 | משתנה | Development (מקומי) | Preview (Vercel) | Production (Vercel) | הערות |
 |---|---|---|---|---|
-| `ANTHROPIC_API_KEY` | ב-`.env`. מפתח נפרד לפיתוח | לא בשימוש. אם יידרש, מפתח הפיתוח | מפתח Production. נשמר **רק** ב-Vercel | Sensitive, בצד השרת בלבד |
-| `ANTHROPIC_MODEL` | אופציונלי | אופציונלי | אופציונלי | ברירת המחדל היא `claude-sonnet-5-5` |
+| `OPENAI_API_KEY` | ב-`.env`. מפתח נפרד לפיתוח | לא בשימוש. אם יידרש, מפתח הפיתוח | מפתח Production. נשמר **רק** ב-Vercel | Sensitive, בצד השרת בלבד |
+| `OPENAI_MODEL` | אופציונלי | אופציונלי | אופציונלי | ברירת המחדל היא `gpt-6.1-sol` |
 
-- מומלץ ליצור שני API Keys נפרדים ב-Anthropic Console (פיתוח ו-Production). כך אפשר להחליף או לבטל אחד מהם בלי לפגוע בשני, ולעקוב אחרי העלות של כל סביבה בנפרד.
+- מומלץ ליצור שני API Keys נפרדים ב-OpenAI Platform (פיתוח ו-Production). כך אפשר להחליף או לבטל אחד מהם בלי לפגוע בשני, ולעקוב אחרי העלות של כל סביבה בנפרד.
 - כל שינוי במשתני הסביבה ב-Vercel נכנס לתוקף רק בפריסה הבאה (Redeploy).
 
 **הרצה מקומית לבדיקה:** `npm install`, יצירת `.env` מתוך `.env.example` (המשתמש ממלא את הערכים), ואז `npm run dev`. לא נדרשים Docker, Database או שירותים מקומיים נוספים. בדיקת התקנה כ-PWA והתנהגות ה-Service Worker נעשית על כתובת ה-Production, שרצה ב-HTTPS.
@@ -323,14 +324,15 @@ Responses:
 - [Vercel Functions Limits](https://vercel.com/docs/functions/limitations)
 - [Vercel – Fair Use Guidelines (שימוש מסחרי ב-Hobby)](https://vercel.com/docs/limits/fair-use-guidelines)
 - [Vercel – Hobby Plan](https://vercel.com/docs/plans/hobby)
-- [Anthropic TypeScript SDK](https://github.com/anthropics/anthropic-sdk-typescript)
-- [Anthropic – Pricing](https://www.anthropic.com/pricing)
+- [OpenAI Node SDK](https://github.com/openai/openai-node)
+- [OpenAI – All models](https://developers.openai.com/api/docs/models/all)
+- [OpenAI – gpt-6.1-sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol)
 
 ---
 
 ## החלטות מרכזיות (ADRs)
 
-### ADR-1: מודל ה-AI הוא `claude-sonnet-5-5`
+### ADR-1: מודל ה-AI הוא `claude-sonnet-5-5` (הוחלף ב-ADR-8)
 **הקשר:** המסמך המקורי בחר ב-`claude-opus-5-5`, המודל החזק והיקר ביותר. אין Rate Limiting, והמשימה (בדיחה אחת קצרה) לא דורשת את המודל החזק ביותר.
 **החלטה:** ברירת המחדל היא `claude-sonnet-5-5`, מודל ביניים במחיר ובאיכות.
 **השלכות:** עלות נמוכה יותר וזמן תגובה קצר יותר מ-Opus. אפשר להחליף מודל בכל רגע דרך `ANTHROPIC_MODEL`, בלי שינוי קוד.
@@ -354,3 +356,23 @@ Responses:
 **הקשר:** במסמך המקורי השרת המתין עד 25 שניות עם ניסיון חוזר אחד, כלומר עד כ-50 שניות, בעוד שהלקוח מוותר אחרי 30 שניות.
 **החלטה:** ה-Timeout של ה-SDK הוא 12 שניות, עם `maxRetries: 1`.
 **השלכות:** גם במקרה הגרוע השרת מסיים לפני הלקוח, ולא ממשיך לעבוד ולשלם על בקשה שהמשתמש כבר ויתר עליה.
+
+### ADR-6: בלי `dynamic = "force-dynamic"` ב-Route Handler
+**הקשר:** סעיף 2.5 קבע `export const dynamic = "force-dynamic"` ל-`/api/joke`. הפרויקט הוקם ב-Milestone 1 עם `cacheComponents: true`, ולפי התיעוד של Next.js 16 ההגדרה `dynamic` הוסרה כש-Cache Components פעיל.
+**החלטה:** לא מוסיפים את `dynamic`. בקשת `POST` ב-Route Handler רצה מחדש בכל בקשה ולא נשמרת ב-Cache. `maxDuration = 60` נשאר.
+**השלכות:** כל לחיצה עדיין מייצרת בדיחה חדשה (FR2.3), וה-Build עובר.
+
+### ADR-7: כתובת ה-API של ספק ה-AI קבועה בקוד
+**הקשר:** ה-SDK קורא משתנה סביבה של כתובת בסיס (`OPENAI_BASE_URL`) אם הוא קיים. בסביבות פיתוח מסוימות (למשל כלי AI שמריצים את השרת) משתנה כזה מוגדר ומפנה לשרת אחר, וכך המפתח עלול להישלח לכתובת שאינה של הספק.
+**החלטה:** ה-Client ב-`joke-service` נוצר עם `baseURL: "https://api.openai.com/v1"`.
+**השלכות:** המפתח נשלח תמיד רק ל-OpenAI. החלפת כתובת דורשת שינוי קוד, ואין בכך צורך במוצר הזה.
+
+### ADR-8: מעבר מ-Anthropic Claude ל-OpenAI
+**הקשר:** במהלך Milestone 2 התברר שלמשתמש יש מפתח API של OpenAI ולא של Anthropic, והמשתמש ביקש להעביר את המוצר ל-OpenAI.
+**החלטה:**
+- ספק ה-AI הוא OpenAI, דרך ה-SDK הרשמי `openai` ו-Responses API (`client.responses.create`).
+- המודל הוא `gpt-6.1-sol` (בדומה לנימוק של ADR-1: מודל ביניים, באותו מחיר כמו `claude-sonnet-5-5`, $2 / $10 למיליון טוקנים).
+- `reasoning.effort: "low"`, `max_output_tokens: 2000` ו-`store: false`.
+- משתני הסביבה: `OPENAI_API_KEY` ו-`OPENAI_MODEL` (במקום `ANTHROPIC_API_KEY` ו-`ANTHROPIC_MODEL`).
+- אין מקבילה ל-`fallbacks` של Anthropic, ולכן הוא הוסר. ADR-5 (Timeout של 12 שניות, `maxRetries: 1`) נשאר בתוקף, ומיושם ב-Client של OpenAI ב-Milestone 3.
+**השלכות:** חשבון, מפתחות ו-Spend Limit מנוהלים ב-OpenAI Platform. ב-Vercel צריך להגדיר `OPENAI_API_KEY` (Production, Sensitive) ולמחוק את `ANTHROPIC_API_KEY`. החלפת מודל נעשית דרך `OPENAI_MODEL`.

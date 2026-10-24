@@ -22,3 +22,54 @@
   --font-sans: var(--font-heebo), system-ui, sans-serif;
   --font-display: var(--font-frank), serif;
 }
+
+/* Lozenge shape: rectangle with angled left/right tips (DESIGN.md, section 2.4) */
+.lozenge {
+  --tip: 22px;
+  clip-path: polygon(
+    var(--tip) 0,
+    calc(100% - var(--tip)) 0,
+    100% 50%,
+    calc(100% - var(--tip)) 100%,
+    var(--tip) 100%,
+    0 50%
+  );
+}
+
+@utility bg-gold-gradient {
+  background-image: linear-gradient(to bottom, #fbe6a0, #e5b12e 50%, #b07a16);
+}
+
+@utility bg-silver-gradient {
+  background-image: linear-gradient(to bottom, #dce1ec, #9aa3bc);
+}
+
+@utility bg-card {
+  background-image: radial-gradient(
+    ellipse 90% 120% at 50% 0%,
+    #2b33a8,
+    #1c2380 45%,
+    #0e1450
+  );
+}
+
+@utility glow-gold {
+  filter: drop-shadow(0 0 14px rgb(229 177 46 / 0.45));
+}
+
+/* Stage background: spotlight, light rays, vertical gradient, purple floor glow */
+.stage-bg {
+  background:
+    radial-gradient(ellipse 90% 40% at 50% 0%, rgb(61 123 255 / 0.75), transparent 75%),
+    radial-gradient(ellipse 100% 30% at 50% 100%, rgb(58 42 143 / 0.55), transparent 75%),
+    linear-gradient(to bottom, #1c2380, #0e1450 45%, #070a2e);
+}
+
+.stage-rays {
+  background: repeating-conic-gradient(
+    from 0deg at 50% -8%,
+    rgb(255 255 255 / 0.05) 0deg 1.6deg,
+    transparent 1.6deg 7deg
+  );
+  mask-image: linear-gradient(to bottom, black, transparent 90%);
+}

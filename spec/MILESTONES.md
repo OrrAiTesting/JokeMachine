@@ -51,13 +51,13 @@
   - Metadata בסיסי עם הכותרת "מכונת הבדיחות".
 - הגדרת צבעי ה-Style Guide כ-Design Tokens של Tailwind (לפי DESIGN.md, סעיף 2.1).
 - דף ראשי זמני שמציג את הכותרת **מכונת הבדיחות** בלבד.
-- קובץ `.env.example` עם שמות המשתנים `ANTHROPIC_API_KEY` ו-`ANTHROPIC_MODEL`, בלי ערכים, שמועתק פעם אחת ל-`.env`. קובץ `.gitignore` כבר קיים ומגן על `.env`. מוסיפים לו שורות רק אם צריך, ולא מחליפים אותו.
+- קובץ `.env.example` עם שמות המשתנים `OPENAI_API_KEY` ו-`OPENAI_MODEL`, בלי ערכים, שמועתק פעם אחת ל-`.env`. קובץ `.gitignore` כבר קיים ומגן על `.env`. מוסיפים לו שורות רק אם צריך, ולא מחליפים אותו.
 - Security Headers ב-`next.config.ts`, לפי ARCHITECTURE.md (סעיף 2.10).
 - **פעולות של המשתמש, בהדרכה צעד אחר צעד:**
   1. ~~יצירת Repository ב-GitHub~~. בוצע: `OrrAiTesting/JokeMachine`, ענף `main`.
   2. יצירת חשבון Vercel, חיבור ה-Repository והגדרת `main` כענף ה-Production.
-  3. יצירת חשבון ב-Anthropic Console והפקת שני API Keys: אחד ל-Development ואחד ל-Production.
-  4. הגדרת Spend Limit חודשי בחשבון Anthropic.
+  3. יצירת חשבון ב-OpenAI Platform והפקת שני API Keys: אחד ל-Development ואחד ל-Production.
+  4. הגדרת Spend Limit חודשי בחשבון OpenAI.
   5. הגדרת משתני הסביבה:
      - מפתח ה-Development: המשתמש ממלא אותו בעצמו בקובץ `.env` במחשב.
      - מפתח ה-Production נשמר רק ב-Vercel עבור סביבת Production, ומסומן כ-Sensitive.
@@ -69,12 +69,12 @@
 - [ ] `npm run build` עובר בלי שגיאות.
 - [ ] Push ל-`main` (אחרי אישור המשתמש) מעדכן את כתובת ה-Production אוטומטית.
 - [ ] `.env` לא נמצא ב-Repository, ו-`.env.example` קיים בלי ערכים.
-- [ ] מפתח ה-Production מוגדר ב-Vercel עבור Production, ו-Spend Limit מוגדר ב-Anthropic. המשתמש מאשר זאת.
+- [ ] מפתח ה-Production מוגדר ב-Vercel עבור Production, ו-Spend Limit מוגדר ב-OpenAI. המשתמש מאשר זאת.
 - [ ] ה-Security Headers מופיעים בתשובת ה-HTTP של האתר הפרוס.
 
 ---
 
-## Milestone 2 – קבלת בדיחה מקצה לקצה
+## Milestone 2 – קבלת בדיחה מקצה לקצה ✅
 
 **מטרה:** לממש את היכולת המרכזית של המוצר. המשתמש מקליד נושא, או משאיר את התיבה ריקה, ומקבל בדיחה מה-AI, במסך המעוצב לפי ה-Mockup.
 
@@ -84,7 +84,7 @@
   - מודול `joke-service` (server-only), לפי ARCHITECTURE.md (סעיף 2.5):
     - System Prompt: קהל 18+, הומור לא פוגעני, בדיחה אחת, בשפת הנושא, טקסט בלבד.
     - הנושא נשלח בתוך התגית `<topic>`. כשאין נושא, נשלחת בקשה לבדיחה כללית בעברית.
-    - הפרמטרים: `model` (מתוך משתנה סביבה, ברירת מחדל `claude-sonnet-5-5`), `max_tokens`, ו-`effort: "low"` ו-`fallbacks` אחרי אימות מול התיעוד העדכני של Anthropic.
+    - הפרמטרים: `model` (מתוך משתנה סביבה, ברירת מחדל `gpt-6.1-sol`), `max_output_tokens`, `reasoning.effort: "low"` ו-`store: false` (ARCHITECTURE.md, ADR-8).
     - חילוץ הטקסט מהתשובה.
   - Route Handler עם `dynamic = "force-dynamic"` ו-`maxDuration`.
 - **Frontend: המסך הראשי לפי DESIGN.md (סעיף 1.1) ו-`mockups.png`:**
@@ -109,7 +109,7 @@
 - [ ] Enter במקלדת שולח את הבקשה.
 - [ ] בזמן טעינה מוצג **חושב על משהו מצחיק...**, ולחיצות נוספות לא שולחות בקשות נוספות (נבדק בלשונית Network).
 - [ ] המסך תואם ל-`mockups.png` ול-DESIGN.md ברוחב מובייל של 375px: צבעים, גופנים, צורות Lozenge, כרטיס, זוהר ו-RTL.
-- [ ] ה-API Key לא מופיע בקוד שנשלח לדפדפן. חיפוש של `sk-ant` בקבצי ה-JS שהדפדפן טוען לא מחזיר תוצאות, ו-`npm run build` עובר עם `server-only`.
+- [ ] ה-API Key לא מופיע בקוד שנשלח לדפדפן. חיפוש של `sk-` ושל `OPENAI_API_KEY` בקבצי ה-JS שהדפדפן טוען לא מחזיר תוצאות, ו-`npm run build` עובר עם `server-only`.
 - [ ] אחרי אישור המשתמש לדחיפה, הבדיקות בוצעו גם על כתובת ה-Production, ולא רק מקומית.
 
 ---
@@ -121,7 +121,7 @@
 **מה יש לממש:**
 - **Backend:**
   - מיפוי שגיאות לפי ARCHITECTURE.md (סעיף 2.6): `400 invalid_request`, `502 ai_error`, `502 empty_response`, `500 server_error`.
-  - הגדרות ה-Client של Anthropic: `timeout` של 12 שניות ו-`maxRetries: 1` (ARCHITECTURE.md, ADR-5).
+  - הגדרות ה-Client של OpenAI: `timeout` של 12 שניות ו-`maxRetries: 1` (ARCHITECTURE.md, ADR-5).
   - Log בצד השרת שכולל רק את סוג השגיאה והסטטוס, בלי תוכן הנושא או הבדיחה ובלי המפתח.
 - **Frontend:**
   - בדיקת `navigator.onLine` לפני השליחה, וזיהוי כשל רשת ב-`fetch`. בשני המקרים מוצג **אין חיבור לאינטרנט. בדקו את החיבור ונסו שוב.**
@@ -191,6 +191,6 @@
 - [ ] כל User Stories ב-PRD (סעיף 2.ב) עברו בדיקה ידנית על כתובת ה-Production.
 - [ ] כל השורות בטבלת מקרי הקצה ב-PRD (סעיף 4.ב) נבדקו, והתוצאות מוצגות למשתמש.
 - [ ] האפליקציה נבדקה ב-Chrome על Android, ב-Safari על iOS, וב-Chrome ו-Safari על Desktop.
-- [ ] ב-Anthropic Console רואים שהבקשות מה-Production נרשמות על מפתח ה-Production.
-- [ ] `ANTHROPIC_API_KEY` לא חשוף: הוא לא מופיע בקוד הלקוח, ב-Repository או בתשובות API.
+- [ ] ב-OpenAI Platform (Usage) רואים שהבקשות מה-Production נרשמות על מפתח ה-Production.
+- [ ] `OPENAI_API_KEY` לא חשוף: הוא לא מופיע בקוד הלקוח, ב-Repository או בתשובות API.
 - [ ] המשתמש אישר שהמוצר מוכן.
