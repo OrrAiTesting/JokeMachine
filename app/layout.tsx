@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Frank_Ruhl_Libre, Heebo } from "next/font/google";
+import { ServiceWorkerRegister } from "./service-worker-register";
 import { StageBackground } from "./stage-background";
 import "./globals.css";
 
@@ -19,6 +20,16 @@ const frankRuhlLibre = Frank_Ruhl_Libre({
 
 export const metadata: Metadata = {
   title: "מכונת הבדיחות",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  // Full screen on iOS; content stays clear of the status bar via safe-area padding
+  appleWebApp: {
+    capable: true,
+    title: "מכונת הבדיחות",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 // viewport-fit=cover + safe-area padding (ARCHITECTURE.md, section 2.12)
@@ -39,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-midnight font-sans text-white">
         <StageBackground />
         {children}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

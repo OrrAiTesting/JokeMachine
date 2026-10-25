@@ -376,3 +376,18 @@ Responses:
 - משתני הסביבה: `OPENAI_API_KEY` ו-`OPENAI_MODEL` (במקום `ANTHROPIC_API_KEY` ו-`ANTHROPIC_MODEL`).
 - אין מקבילה ל-`fallbacks` של Anthropic, ולכן הוא הוסר. ADR-5 (Timeout של 12 שניות, `maxRetries: 1`) נשאר בתוקף, ומיושם ב-Client של OpenAI ב-Milestone 3.
 **השלכות:** חשבון, מפתחות ו-Spend Limit מנוהלים ב-OpenAI Platform. ב-Vercel צריך להגדיר `OPENAI_API_KEY` (Production, Sensitive) ולמחוק את `ANTHROPIC_API_KEY`. החלפת מודל נעשית דרך `OPENAI_MODEL`.
+
+### ADR-9: האייקונים נוצרים בסקריפט חד-פעמי עם `sharp`, והקבצים נשמרים ב-Repository
+**הקשר:** סעיף 2.12 דורש אייקונים בכמה גדלים מקובץ SVG מקור אחד, בלי לקבוע כלי.
+**החלטה:** קובץ המקור הוא `assets/app-icon.svg`. הסקריפט `scripts/generate-icons.mjs` (`npm run icons`) מייצר ממנו בעזרת `sharp` (devDependency) את `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` ו-`apple-touch-icon.png`. הסקריפט לא רץ ב-Build ולא ב-Vercel.
+**השלכות:** שינוי באייקון = עריכת ה-SVG והרצת `npm run icons` מחדש. קובצי ה-PNG נכנסים ל-Git.
+
+### ADR-10: שורת הסטטוס ב-iOS במצב `black-translucent`
+**הקשר:** כאפליקציה מותקנת ב-iOS, המסך צריך להיפתח במסך מלא בלי שהתוכן יוסתר מתחת לשורת הסטטוס.
+**החלטה:** `appleWebApp.statusBarStyle: "black-translucent"` ב-Metadata. הרקע הכהה נמשך עד לראש המסך, והריווח הקיים עם `env(safe-area-inset-top)` (סעיף 2.12) מרחיק את התוכן משורת הסטטוס.
+**השלכות:** הריווח של ה-Safe Area הוא מה שמגן על התוכן, ואין להסיר אותו מ-`app/page.tsx`.
+
+### ADR-11: ב-Development מוסר Service Worker קיים
+**הקשר:** ה-Service Worker נרשם רק ב-Production. מי שבודק מקומית `npm run start` ואחר כך `npm run dev` באותה כתובת (`localhost:3000`) נשאר עם Service Worker שמגיש קבצים ישנים מה-Cache.
+**החלטה:** ב-Development, רכיב הרישום (`app/service-worker-register.tsx`) מבטל כל Service Worker רשום במקום לרשום חדש.
+**השלכות:** אין השפעה על Production. בפיתוח תמיד נטען הקוד העדכני.
